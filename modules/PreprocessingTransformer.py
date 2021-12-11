@@ -28,7 +28,7 @@ class PreprocessingTransformer():
         self.encoder.fit(X[self.categorical_features])
         self.label_encoder.fit(y)
 
-    def fit_transform_split(self, X: pd.DataFrame, y: pd.Series, test_size=0.2):
+    def split_fit_transform(self, X: pd.DataFrame, y: pd.Series, test_size=0.2):
         """
         Split the data to train and test with respect to the given `test_size` parma.
         Fits the transformers on the train data and then transforms the train and test data
