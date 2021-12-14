@@ -18,13 +18,10 @@ class CDD():
         else:
             raise Exception("Must provide either previous sample to compare or cache path")
 
-    def evaluate(self, model, X, save_to_cache=False):
-        if not hasattr(model, 'predict_proba'):
-            raise Exception("Model doesn't have soft prediction method")
-        y_pred = model.predict_proba(X)
-        dist = y_pred
+    def evaluate(self, y, save_to_cache=False):
+        dist = y
         if self.cache["apply_hist"]:
-            dist = np.histogram(y_pred, self.cache["hist_bins"])[0].tolist()
+            dist = np.histogram(y, self.cache["hist_bins"])[0].tolist()
         ks_stat_res = []
         ks_pval_res = []
         for prev_sample in self.cache["prev_samples"]:
