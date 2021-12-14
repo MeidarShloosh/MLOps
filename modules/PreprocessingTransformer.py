@@ -2,6 +2,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 import numpy as np
 import pandas as pd
+import pickle
 
 
 class PreprocessingTransformer():
@@ -73,6 +74,22 @@ class PreprocessingTransformer():
 
         return pd.concat((X_train_num_pd,X_train_cat_pd), axis=1), y
 
+    def save(self, path: str):
+        """
+        Saves the current object to the given path as pickle format
+        :param path: The path to save the object
+        """
+        with open(path, "wb") as f:
+            pickle.dump(self, f)
 
-
+    @staticmethod
+    def load(path: str):
+        """
+        Loads the current class
+        :param path: Path to the saved pickle file
+        :return: The loaded file
+        """
+        with open(path, "rb") as f:
+            instance = pickle.load(f)
+        return instance
 
