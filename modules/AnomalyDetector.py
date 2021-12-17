@@ -18,7 +18,7 @@ class AnomalyDetector:
         self.max_discarded_samples_ratio = max_discarded_samples_ratio
         self.anomaly_detector = None
 
-    def fit(self, X: pd.DataFrame, y: pd.Series):
+    def fit(self, X: np.ndarray, y: np.ndarray):
         """
         This function examines two algorithms:
         a. Isolation Forest
@@ -28,19 +28,19 @@ class AnomalyDetector:
         distribution for the fitted data should be very different from the scores distribution of the evaluated data.
         """
         # find all classes
-        classes = y.unique()
-
+        classes = np.unique(y)
         # define a list of detectors (meanwhile with default parameters)
         detectors = [IsolationForest(), OneClassSVM()]
-        detector_scores = np.zeros((len(detectors),))
+        detector_scores = []
         for d in detectors:
             js_div = 0
             for c in classes:
                 # separate samples corresponding to that label from all other samples
-                class_idx = y[y == c].index.tolist()
-                class_data = X[class_idx].to_numpy()
-                other_class_idx = y[y != c].index.tolist()
-                other_class_data = X[other_class_idx].to_numpy()
+                class_idx = np.squeeze(np.argwhere(y == c))
+                class_data = X[class_idx, :]
+
+                other_class_idx = np.squeeze(np.argwhere(y != c))
+                other_class_data = X[other_class_idx, :]
                 # train an anomaly detector on the current class
                 clf = d.fit(class_data)
                 # get scores for this class
@@ -50,8 +50,8 @@ class AnomalyDetector:
                 # create a unified support
                 c = np.concatenate((this_class_scores, other_class_scores))
                 bins = np.linspace(np.amin(c), np.amax(c), num=1000)
-                this_class_hist = np.histogram(this_class_scores,bins=bins, density=True)
-                other_class_hist = np.histogram(other_class_scores, bins=bins, density=True)
+                this_class_hist, _ = np.histogram(this_class_scores,bins=bins, density=True)
+                other_class_hist, _ = np.histogram(other_class_scores, bins=bins, density=True)
                 # calculate the Jensen-Shannon divergence between the distributions
                 js_div += jensenshannon(this_class_hist, other_class_hist)
 
@@ -61,18 +61,18 @@ class AnomalyDetector:
         # get the best detector - we want the JS divergence to be maximal
         self.anomaly_detector = detectors[np.argmax(detector_scores)]
 
-    def fit_predict(self,X: pd.DataFrame, y: pd.Series):
+    def fit_predict(self,X: np.ndarray, y: np.ndarray):
         # find the best detector for this data
         self.fit(X,y)
         # go over the classes one by one
-        classes = y.unique()
+        classes = np.unique(y)
         for i, c in enumerate(classes):
             # separate samples corresponding to that label from all other samples
-            class_idx = y[y == c].index.tolist()
-            class_data = X[class_idx].to_numpy()
-            class_labels = y[class_idx].to_numpy()
+            class_idx = np.squeeze(np.argwhere(y == c))
+            class_data = X[class_idx, :]
+            class_labels = y[class_idx]
             # find out the maximal number of samples we can discard
-            max_discarded_samples = self.max_discarded_samples_ratio * class_data.shape[0]
+            max_discarded_samples = int(np.floor(self.max_discarded_samples_ratio * class_data.shape[0]))
             # fit the anomaly detector to the class data
             det = self.anomaly_detector.fit(class_data)
             # predict which samples are anomalous
@@ -101,5 +101,11 @@ class AnomalyDetector:
                 X_reduced = np.concatenate((X_reduced, class_data_reduced))
                 y_reduced = np.concatenate((y_reduced, class_labels_reduced))
 
-        return pd.DataFrame(X_reduced), pd.Series(y_reduced)
+        return X_reduced, y_reduced
+
+    @staticmethod
+    def _print(message, verbose=True):
+        """ Simple wrapper around print to make it conditional """
+        if verbose:
+            print(message)
 
