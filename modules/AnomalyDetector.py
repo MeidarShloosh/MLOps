@@ -4,10 +4,11 @@ from sklearn.svm import OneClassSVM
 from sklearn.ensemble import IsolationForest
 from scipy.stats import iqr
 from scipy.spatial.distance import jensenshannon
+import matplotlib.pyplot as plt
 
 
 class AnomalyDetector:
-    def __init__(self, max_discarded_samples_ratio=0.05):
+    def __init__(self, max_discarded_samples_ratio=0.05, bypass=False, verbosity=False):
         """
         Per-class anomaly detection in a labeled dataset. The main functions are
         a. find an appropriate detector for the data
@@ -17,6 +18,8 @@ class AnomalyDetector:
         """
         self.max_discarded_samples_ratio = max_discarded_samples_ratio
         self.anomaly_detector = None
+        self.verbosity = verbosity
+        self.bypass = bypass
 
     def fit(self, X: np.ndarray, y: np.ndarray):
         """
@@ -32,9 +35,11 @@ class AnomalyDetector:
         # define a list of detectors (meanwhile with default parameters)
         detectors = [IsolationForest(), OneClassSVM()]
         detector_scores = []
-        for d in detectors:
+        if self.verbosity:
+            fig, axs = plt.subplots(len(detectors), len(classes), figsize=(12, 12))
+        for i, d in enumerate(detectors):
             js_div = 0
-            for c in classes:
+            for j, c in enumerate(classes):
                 # separate samples corresponding to that label from all other samples
                 class_idx = np.squeeze(np.argwhere(y == c))
                 class_data = X[class_idx, :]
@@ -49,9 +54,19 @@ class AnomalyDetector:
                 other_class_scores = clf.score_samples(other_class_data)
                 # create a unified support
                 c = np.concatenate((this_class_scores, other_class_scores))
-                bins = np.linspace(np.amin(c), np.amax(c), num=1000)
-                this_class_hist, _ = np.histogram(this_class_scores,bins=bins, density=True)
+                bins = np.linspace(np.amin(c), np.amax(c), num=100)
+                bin_width = (np.amax(c) - np.amin(c))/1000
+                this_class_hist, _ = np.histogram(this_class_scores, bins=bins, density=True)
                 other_class_hist, _ = np.histogram(other_class_scores, bins=bins, density=True)
+                if self.verbosity:
+                    t = "Anomaly scores distribution for detector "+d.__class__.__name__+" class "+str(c)
+                    axs[i, j].bar((bins-bin_width/2)[:-1], this_class_hist, label="fitted class")
+                    axs[i, j].bar((bins-bin_width/2)[:-1], other_class_hist, alpha=0.5, label="other classes")
+                    axs[i, j].set_xlabel('Anomaly scores')
+                    axs[i, j].set_ylabel('Count')
+                    #axs[i, j].set_title(t)
+                    axs[i, j].legend()
+
                 # calculate the Jensen-Shannon divergence between the distributions
                 js_div += jensenshannon(this_class_hist, other_class_hist)
 
@@ -59,6 +74,8 @@ class AnomalyDetector:
             detector_scores.append(js_div)
 
         # get the best detector - we want the JS divergence to be maximal
+        if self.verbosity:
+            print("accumulated JS values: \n",detector_scores)
         self.anomaly_detector = detectors[np.argmax(detector_scores)]
 
     def fit_predict(self,X: np.ndarray, y: np.ndarray):
