@@ -26,8 +26,13 @@ class PreprocessingTransformer():
         :param X: features data frame
         :param y: target value
         """
-        self.scaler.fit(X[self.numerical_features])
-        self.encoder.fit(X[self.categorical_features])
+        num_X = X[self.numerical_features]
+        cat_X = X[self.categorical_features]
+        num_X = num_X.fillna(num_X.median())
+        cat_X = cat_X.fillna(cat_X.mode())
+
+        self.scaler.fit(num_X)
+        self.encoder.fit(cat_X)
         self.label_encoder.fit(y)
 
     def split_fit_transform(self, X: pd.DataFrame, y: pd.Series, test_size=0.2):
