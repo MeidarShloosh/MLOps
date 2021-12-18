@@ -18,6 +18,7 @@ class PreprocessingTransformer():
         self.label_encoder = LabelEncoder()
         self.categorical_features = categorical_features
         self.numerical_features = numerical_features
+        self.fitted_categorical_columns = categorical_features
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         """
@@ -69,8 +70,10 @@ class PreprocessingTransformer():
         if y is not None:
             y = self.label_encoder.transform(y)
 
+        self.fitted_categorical_columns = self.encoder.get_feature_names_out()
+
         X_train_num_pd = pd.DataFrame(data=X_train_num, columns=self.numerical_features)
-        X_train_cat_pd = pd.DataFrame(data=X_train_cat, columns=self.encoder.get_feature_names_out())
+        X_train_cat_pd = pd.DataFrame(data=X_train_cat, columns=self.fitted_categorical_columns)
 
         return pd.concat((X_train_num_pd,X_train_cat_pd), axis=1), y
 
