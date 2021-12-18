@@ -18,6 +18,7 @@ class PreprocessingTransformer():
         self.label_encoder = LabelEncoder()
         self.categorical_features = categorical_features
         self.numerical_features = numerical_features
+        self.fitted_categorical_columns = categorical_features
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         """
@@ -25,8 +26,13 @@ class PreprocessingTransformer():
         :param X: features data frame
         :param y: target value
         """
-        self.scaler.fit(X[self.numerical_features])
-        self.encoder.fit(X[self.categorical_features])
+        num_X = X[self.numerical_features]
+        cat_X = X[self.categorical_features]
+        num_X = num_X.fillna(num_X.median())
+        cat_X = cat_X.fillna(cat_X.mode())
+
+        self.scaler.fit(num_X)
+        self.encoder.fit(cat_X)
         self.label_encoder.fit(y)
 
     def split_fit_transform(self, X: pd.DataFrame, y: pd.Series, test_size=0.2):
@@ -69,8 +75,10 @@ class PreprocessingTransformer():
         if y is not None:
             y = self.label_encoder.transform(y)
 
+        self.fitted_categorical_columns = self.encoder.get_feature_names_out()
+
         X_train_num_pd = pd.DataFrame(data=X_train_num, columns=self.numerical_features)
-        X_train_cat_pd = pd.DataFrame(data=X_train_cat, columns=self.encoder.get_feature_names_out())
+        X_train_cat_pd = pd.DataFrame(data=X_train_cat, columns=self.fitted_categorical_columns)
 
         return pd.concat((X_train_num_pd,X_train_cat_pd), axis=1), y
 
