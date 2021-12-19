@@ -35,7 +35,7 @@ class AnomalyDetector:
         # find all classes
         classes = np.unique(y)
         # define a list of detectors (meanwhile with default parameters)
-        detectors = [IsolationForest(n_estimators=5*X.shape[1],max_samples=1.0), OneClassSVM(nu=self.max_discarded_samples_ratio)]
+        detectors = [IsolationForest(n_estimators=10*X.shape[1],max_samples=1.0, random_state=11), OneClassSVM(nu=self.max_discarded_samples_ratio)]
         detector_scores = []
         if self.verbosity:
             fig, axs = plt.subplots(len(detectors), len(classes), figsize=(12, 12))
@@ -62,8 +62,8 @@ class AnomalyDetector:
                 other_class_hist, _ = np.histogram(other_class_scores, bins=bins)
                 if self.verbosity:
                     t = "Anomaly scores distribution for detector "+d.__class__.__name__+" class "+str(c)
-                    axs[i, j].bar((bins-bin_width/2)[:-1], this_class_hist/this_class_scores.size, label="fitted class")
-                    axs[i, j].bar((bins-bin_width/2)[:-1], other_class_hist/other_class_scores.size, alpha=0.5, label="other classes")
+                    axs[i, j].bar((bins-bin_width/2)[:-1], this_class_hist/this_class_scores.size, width=0.8*bin_width, alpha=0.5, label="fitted class")
+                    axs[i, j].bar((bins-bin_width/2)[:-1], other_class_hist/other_class_scores.size, width=0.8*bin_width, alpha=0.5, label="other classes")
                     axs[i, j].set_xlabel('Anomaly scores')
                     axs[i, j].set_ylabel('Count')
                     #axs[i, j].set_title(t)
