@@ -6,7 +6,7 @@ import numpy as np
 features_to_resampler_mapping = {"num_only": SMOTE, "cat_only": SMOTEN, "mixed": SMOTENC}
 
 class Resampler:
-    def __init__(self, model, categorical_features, feature_composition="mixed"):
+    def __init__(self, model, feature_composition="mixed",bypass=False):
         """
         Up-sample the minority class in a dataset using the input resampler. The input resampler should be a sklearn
         imbalance model from the SMOTE family
@@ -14,17 +14,19 @@ class Resampler:
         self.model = model
         if feature_composition not in features_to_resampler_mapping:
             raise ValueError("Unsupported feature composition type")
+        self.feature_composition = feature_composition
         self.resampler = features_to_resampler_mapping[feature_composition]
-        if feature_composition == 'mixed':
-            self.best_params = {"categorical_features": categorical_features}
-        else:
-            self.best_params = {}
+        self.best_params = {}
+        self.bypass = bypass
         
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
+    def fit(self, X: np.ndarray, y: np.ndarray, categorical_features=None):
         """
         Performs CV on the data to determine hyper-parameters of the resampler
         """
+        if self.feature_composition == 'mixed':
+            self.best_params["categorical_features"] = categorical_features
+
         # define a range for the number of neighbors
         k_neighbors_range = range(2, 7)
         best_score = 0
@@ -43,11 +45,15 @@ class Resampler:
                 best_k = k
         self.best_params['k_neighbors'] = best_k
 
-    def fit_resample(self, X: np.ndarray, y: np.ndarray):
-        self.fit(X,y)
-        # resample with the best k and return the resampled data
-        best_over_sampler = self.resampler(**self.best_params)
-        X_res, y_res = best_over_sampler.fit_resample(X, y)
+    def fit_resample(self, X: np.ndarray, y: np.ndarray, categorical_features=None):
+        if self.bypass:
+            X_res = X
+            y_res = y
+        else:
+            self.fit(X, y, categorical_features=categorical_features)
+            # resample with the best k and return the resampled data
+            best_over_sampler = self.resampler(**self.best_params)
+            X_res, y_res = best_over_sampler.fit_resample(X, y)
         return X_res, y_res
 
 
