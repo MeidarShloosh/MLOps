@@ -17,7 +17,7 @@ class CDD():
             with open(path) as f:
                 self.cache = json.load(f)
         elif prev_sample is not None:
-            prev_sample = list(prev_sample) if not apply_hist else np.histogram(prev_sample, hist_bins)[0].tolist()
+            prev_sample = list(prev_sample) if not apply_hist else np.histogram(prev_sample, hist_bins, density=True)[0].tolist()
             self.cache = {
                 "hist_bins":  hist_bins,
                 "apply_hist": apply_hist,
@@ -36,7 +36,7 @@ class CDD():
         """
         dist = y
         if self.cache["apply_hist"]:
-            dist = np.histogram(y, self.cache["hist_bins"])[0].tolist()
+            dist = np.histogram(y, self.cache["hist_bins"], density=True)[0].tolist()
         ks_stat_res = []
         ks_pval_res = []
         for prev_sample in self.cache["prev_samples"]:
