@@ -47,6 +47,7 @@ class Resampler:
                 best_score = mean_score
                 best_k = k
         self.best_params['k_neighbors'] = best_k
+        print(f"In Resampler: finished grid search for k_neighbors parameter. best k = {self.best_params['k_neighbors']}")
         ratios = [1.0,1.1,1.2]
         best_r = 1.0
         best_score = 0
