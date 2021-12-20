@@ -55,14 +55,14 @@ class AnomalyDetector:
                 # get scores for all data not in this class
                 other_class_scores = clf.decision_function(other_class_data) #other_class_scores = clf.score_samples(other_class_data)
                 # create a unified support
-                c = np.concatenate((this_class_scores, other_class_scores))
-                bins = np.linspace(np.amin(c), np.amax(c), num=100)
-                bin_width = (np.amax(c) - np.amin(c))/bins.size
+                a = np.concatenate((this_class_scores, other_class_scores))
+                bins = np.linspace(np.amin(a), np.amax(a), num=100)
+                bin_width = (np.amax(a) - np.amin(a))/bins.size
                 this_class_hist, _ = np.histogram(this_class_scores, bins=bins)
                 other_class_hist, _ = np.histogram(other_class_scores, bins=bins)
                 if self.verbosity:
                     t = "Anomaly scores distribution for detector "+d.__class__.__name__+" class "+str(c)
-                    axs[i, j].bar((bins-bin_width/2)[:-1], this_class_hist/this_class_scores.size, width=0.8*bin_width, alpha=0.5, label="fitted class")
+                    axs[i, j].bar((bins-bin_width/2)[:-1], this_class_hist/this_class_scores.size, width=0.8*bin_width, alpha=0.5, label=f"fitted class: {c}")
                     axs[i, j].bar((bins-bin_width/2)[:-1], other_class_hist/other_class_scores.size, width=0.8*bin_width, alpha=0.5, label="other classes")
                     axs[i, j].set_xlabel('Anomaly scores')
                     axs[i, j].set_ylabel('Count')
@@ -76,8 +76,8 @@ class AnomalyDetector:
             detector_scores.append(js_div)
 
         # get the best detector - we want the JS divergence to be maximal
-        self._print("accumulated JS values: \n")
-        self._print(detector_scores)
+        self._print("accumulated JS values: \n", self.verbosity)
+        self._print(detector_scores, self.verbosity)
         self.anomaly_detector = detectors[np.argmax(detector_scores)]
 
     def fit_predict(self, X: np.ndarray, y: np.ndarray):
@@ -105,8 +105,8 @@ class AnomalyDetector:
                 threshold = np.quantile(scores, 0.25) - 1*iqr(scores)
                 # find how many points have scores below the threshold
                 abnormal_pts_idx = np.squeeze(np.argwhere((scores < threshold) & (scores < 0)))
-                self._print(f"outlier indices class {c}:")
-                self._print(abnormal_pts_idx)
+                self._print(f"outlier indices class {c}:", self.verbosity)
+                self._print(abnormal_pts_idx, self.verbosity)
                 if abnormal_pts_idx.size > 0:
                     # discard samples
                     if abnormal_pts_idx.size <= max_discarded_samples:
@@ -119,7 +119,7 @@ class AnomalyDetector:
                         self.class_num_discarded_samples.append(abnormal_pts_idx.size)
                         class_data_reduced = np.delete(class_data, abnormal_pts_idx, axis=0)
                         class_labels_reduced = np.delete(class_labels, abnormal_pts_idx, axis=0)
-                        self._print(f"class {c} - discarded {abnormal_pts_idx.size} samples")
+                        print(f"class {c} - discarded {abnormal_pts_idx.size} samples")
                         
                     else:
                         # we need to discard the most anomalous samples. sort the scores in ascending order and find the first
@@ -133,7 +133,7 @@ class AnomalyDetector:
                             self.class_discarded_samples.append(class_data[discarded_idx,:])
                         class_data_reduced = np.delete(class_data, discarded_idx, axis=0)
                         class_labels_reduced = np.delete(class_labels, discarded_idx, axis=0)
-                        self._print(f"class {c} - discarded {discarded_idx.size} samples")
+                        print(f"class {c} - discarded {discarded_idx.size} samples")
         
                 else:
                     class_data_reduced = class_data
@@ -150,7 +150,7 @@ class AnomalyDetector:
         return X_reduced, y_reduced
 
     @staticmethod
-    def _print(message, verbose=True):
+    def _print(message, verbose=False):
         """ Simple wrapper around print to make it conditional """
         if verbose:
             print(message)

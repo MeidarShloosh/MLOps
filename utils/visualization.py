@@ -23,3 +23,12 @@ def get_roc (y_test,y_pred):
     plt.legend(loc="upper left")
     plt.show()
     return
+
+
+def plot_ds_pie(labels, counts):
+
+    # Make figure and axes
+    fig, axs = plt.subplots(figsize=(5, 5))
+    # A standard pie plot
+    axs.pie(counts, labels=labels,autopct='%1.1f%%', shadow=True)
+    plt.show()

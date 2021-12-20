@@ -18,6 +18,7 @@ class Pipeline:
                  anomaly_detector_bypass=False,
                  data_feature_composition="mixed",
                  resampler_bypass=False,
+                 over_sample_all_classes=False,
                  verbosity=False):
         """
         :param model: evaluation model
@@ -25,12 +26,16 @@ class Pipeline:
         :param numerical_features: list of numerical columns names
         :param max_discarded_samples_ratio: the maximal percentage of train samples that can be discarded by the
         anomaly detection step.
+        :param anomaly_detector_bypass: if true, do not remove outliers
+        :param data_feature_composition: num_only, cat_only or mixed. reveals the feature composition of the data
+        :param resampler_bypass: if true, do not resample the data
+        :param over_sample_all_classes: if true, try to add samples to all classes.
 
         """
         self.model = model
         self.transformer = ppt.PreprocessingTransformer(categorical_features=categorical_features, numerical_features=numerical_features)
         self.anomaly_detector = ad.AnomalyDetector(max_discarded_samples_ratio=max_discarded_samples_ratio, bypass=anomaly_detector_bypass, verbosity=verbosity)
-        self.resampler = rs.Resampler(model=model, feature_composition=data_feature_composition)
+        self.resampler = rs.Resampler(model=model, feature_composition=data_feature_composition,over_sample_all=over_sample_all_classes)
         self.verbosity = verbosity
         self.anomaly_detector_bypass = anomaly_detector_bypass
         self.resampler_bypass = resampler_bypass
