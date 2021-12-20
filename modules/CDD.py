@@ -31,7 +31,7 @@ class CDD():
         else:
             self.cache["prev_samples"].append(sample)
 
-    def evaluate(self, y, save_to_cache=False):
+    def evaluate(self, y, save_to_cache=True):
         """
         Evaluates the current prediction of the `model` on `X` with the previous histograms.
         :param model:  a model with predict_proba method

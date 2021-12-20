@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import PreprocessingTransformer as ppt
 import AnomalyDetector as ad
 import Resampler as rs
-#import CDD as cdd
+import CDD as cdd
 from visualization import get_roc
 
 
@@ -36,6 +36,7 @@ class Pipeline:
         self.transformer = ppt.PreprocessingTransformer(categorical_features=categorical_features, numerical_features=numerical_features)
         self.anomaly_detector = ad.AnomalyDetector(max_discarded_samples_ratio=max_discarded_samples_ratio, bypass=anomaly_detector_bypass, verbosity=verbosity)
         self.resampler = rs.Resampler(model=model, feature_composition=data_feature_composition,over_sample_all=over_sample_all_classes)
+        self.cdd = cdd.CDD()
         self.verbosity = verbosity
         self.anomaly_detector_bypass = anomaly_detector_bypass
         self.resampler_bypass = resampler_bypass
@@ -78,6 +79,9 @@ class Pipeline:
         y_pred_proba = self.model.predict_proba(X_test)[:, 1]
         get_roc(y_test, y_pred_proba)
 
+        # cache the test set (from the development phase) for future drift detection
+        self.cdd.add_sample(y_pred_proba)
+
 
     def predict(self, X: np.ndarray, X_ref: np.ndarray=None):
         """
@@ -89,7 +93,10 @@ class Pipeline:
         :param X: features data frame
         :param X_ref: reference data
         """
-        X_transformed = self.transformer.transform(X).to_numpy()
-        y_pred = self.model.predict(X_transformed)
 
-        return y_pred
+        X_transformed,_ = self.transformer.transform(X)
+        X_transformed = X_transformed.to_numpy()
+        y_pred = self.model.predict(X_transformed)
+        y_pred_proba = self.model.predict_proba(X_transformed)[:, 1]
+        ks_stat_res, ks_pval_res = self.cdd.evaluate(y_pred_proba)
+        return y_pred,ks_stat_res, ks_pval_res
