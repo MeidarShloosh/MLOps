@@ -13,13 +13,12 @@ class CDD():
         :param path: path to cache file (json type)
         :param prev_sample: list of previous samples
         """
+        self.cache = None
         if path is not None:
             with open(path) as f:
                 self.cache = json.load(f)
         elif prev_sample is not None:
             self.add_sample(prev_sample)
-        else:
-            self.cache = None
 
     def add_sample(self, sample: Sequence):
         """
