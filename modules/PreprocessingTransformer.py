@@ -47,6 +47,9 @@ class PreprocessingTransformer():
         X_train, X_test, y_train, y_test = train_test_split(X, y,
                                                             test_size=test_size,
                                                             stratify=y)
+        # this is only for demonstration purpose (having access to the raw test set from outside the pipe)                                                            
+        self.dev_test_set = X_test
+
         self.fit(X_train, y_train)
         X_train, y_train = self.transform(X_train, y_train)
         X_test, y_test = self.transform(X_test, y_test)

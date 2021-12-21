@@ -35,7 +35,7 @@ class AnomalyDetector:
         # find all classes
         classes = np.unique(y)
         # define a list of detectors (meanwhile with default parameters)
-        detectors = [IsolationForest(n_estimators=10*X.shape[1],max_samples=1.0, random_state=11), OneClassSVM(nu=self.max_discarded_samples_ratio)]
+        detectors = [IsolationForest(n_estimators=10*X.shape[1],max_samples=1.0, random_state=11,contamination=self.max_discarded_samples_ratio), OneClassSVM(nu=self.max_discarded_samples_ratio)]
         detector_scores = []
         if self.verbosity:
             fig, axs = plt.subplots(len(detectors), len(classes), figsize=(12, 12))
@@ -81,9 +81,12 @@ class AnomalyDetector:
         self.anomaly_detector = detectors[np.argmax(detector_scores)]
 
     def fit_predict(self, X: np.ndarray, y: np.ndarray):
+        print("Anomaly detection step")
+        print("-------------------------------------------------------")
         if self.bypass:
             X_reduced = X
             y_reduced = y
+            print("bypassing....")
         else:
             # find the best detector for this data
             self.fit(X, y)

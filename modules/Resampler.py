@@ -68,9 +68,12 @@ class Resampler:
 
 
     def fit_resample(self, X: np.ndarray, y: np.ndarray, categorical_features=None):
+        print("Re-sample step")
+        print("-------------------------------------------------------")
         if self.bypass:
             X_res = X
             y_res = y
+            print("bypassing....")
         else:
             self.fit(X, y, categorical_features=categorical_features)
             # resample with the best k and return the resampled data
