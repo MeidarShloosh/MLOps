@@ -19,6 +19,8 @@ class PreprocessingTransformer():
         self.categorical_features = categorical_features
         self.numerical_features = numerical_features
         self.fitted_categorical_columns = categorical_features
+        self.num_fill = None
+        self.cat_fill = None
 
     def fit(self, X: pd.DataFrame, y: pd.Series):
         """
@@ -28,8 +30,10 @@ class PreprocessingTransformer():
         """
         num_X = X[self.numerical_features]
         cat_X = X[self.categorical_features]
-        num_X = num_X.fillna(num_X.median())
-        cat_X = cat_X.fillna(cat_X.mode())
+        self.num_fill = num_X.median()
+        self.cat_fill = cat_X.mode()
+        num_X = num_X.fillna(self.num_fill)
+        cat_X = cat_X.fillna(self.cat_fill)
 
         self.scaler.fit(num_X)
         self.encoder.fit(cat_X)
@@ -73,8 +77,12 @@ class PreprocessingTransformer():
         :param y: (Optional) Series of the target class
         :return:
         """
-        X_train_num = self.scaler.transform(X[self.numerical_features])
-        X_train_cat = self.encoder.transform(X[self.categorical_features]).toarray()
+        num_X = X[self.numerical_features]
+        cat_X = X[self.categorical_features]
+        num_X = num_X.fillna(self.num_fill)
+        cat_X = cat_X.fillna(self.cat_fill)
+        X_train_num = self.scaler.transform(num_X)
+        X_train_cat = self.encoder.transform(cat_X).toarray()
         if y is not None:
             y = self.label_encoder.transform(y)
 
