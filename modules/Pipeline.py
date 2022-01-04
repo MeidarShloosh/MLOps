@@ -6,7 +6,7 @@ import PreprocessingTransformer as ppt
 import AnomalyDetector as ad
 import Resampler as rs
 import CDD as cdd
-from visualization import get_roc
+from utils.visualization import get_roc
 
 
 class Pipeline:
